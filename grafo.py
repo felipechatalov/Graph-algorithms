@@ -4,6 +4,12 @@ class Vertice():
         self.conexoes = []
         self.visited = False
         
+        # bfs
+        self.bfs_pai = None
+
+        # dfs   
+        self.dfs_pai = None
+
         # bellmanFord
         self.bf_pai = None
         self.bf_distancia = float('inf')
@@ -15,6 +21,10 @@ class Vertice():
         # prim 
         self.pm_pai = None
         self.pm_distancia = float('inf')
+
+        # ford_fulkerson
+        self.ff_pai = None
+
 
     def __str__(self):
         return f'id: {self.id}'
@@ -34,15 +44,19 @@ class Vertice():
         return menor
 
 class Aresta():
-    def __init__(self, dst, w):
+    def __init__(self, dst, w, **kwargs):
         self.dst = dst
         self.w = w
+        self.capacity = kwargs.get('capacity', float('inf'))
+        self.flow = 0
+
 
 
 def bfs(g, pai):
     print("BFS")
     for v in g:
         v.visited = False
+        v.bfs_pai = None
 
     q = []
     seq = []
@@ -58,6 +72,7 @@ def bfs(g, pai):
 
         for ar in pai.conexoes:
             if not ar.dst.visited:
+                ar.dst.bfs_pai = pai
                 q.append(ar.dst)
                 seq.append(ar.dst)
                 ar.dst.visited = True
@@ -73,11 +88,11 @@ def bfs(g, pai):
         print(v.id, end=" ") 
     print('\n')
     return seq
-
 def dfs(g, pai):
     print("DFS")
     for v in g:
         v.visited = False
+        v.dfs_pai = None
     
     q = []
     seq = []
@@ -94,6 +109,7 @@ def dfs(g, pai):
         for ar in pai.conexoes:
             if not ar.dst.visited:
                 q = [ar.dst] + q
+                ar.dst.dfs_pai = pai
                 seq.append(ar.dst)
                 ar.dst.visited = True
                 print(f'-> {ar.dst.id} ', end='')
@@ -130,6 +146,7 @@ def bellman_ford(vertices, pai):
     for v in vertices:
         print(f'{v.id} -> {v.bf_distancia if v.bf_distancia != float("inf") else f"SEM CAMINHO PARTINDO DE {pai.id}"}')
     print('\n')
+
 def dijkstra(vertices, pai):
     print("Dijkstra")
     # reset node configs
@@ -204,7 +221,6 @@ def floyd_warshall(vertices):
 
     return d, pred
 
-
 def prim(vertices, pai):
     print("Prim")
     for v in vertices:
@@ -244,36 +260,141 @@ def prim(vertices, pai):
     print()
     return l
 
+def ff_bfs(g, pai, dst):
+    print("FF-BFS")
+    for v in g:
+        v.visited = False
+        v.ff_pai = None
+
+    q = []
+    seq = []
+
+    q.append(pai)
+    seq.append(pai)
+
+    print(f'Comecou em {pai.id}')
+
+    while q != []:
+        p = q.pop(0)
+        p.visited = True  
+
+        for ar in p.conexoes:
+            if not ar.dst.visited and ar.capacity > 0:
+                ar.dst.ff_pai = p
+                print(f'{p.id} -> {ar.dst.id}')
+                q.append(ar.dst)
+                seq.append(ar.dst)
+                ar.dst.visited = True
+                # print(f'-> {ar.dst.id} ', end='')
+        # if q == []:
+        #     for v in g:
+        #         if v.visited == False:
+        #             q.append(v)
+        #             break
+
+    
+    if pai not in seq or dst not in seq:
+        print(f"sem caminho de {pai.id} ate {dst.id}")
+        return None
+
+    print(f'\nSequencia de visita em lista: ')
+    for v in seq:
+        print(v.id, end=" ") 
+    print('\n')
+    return seq
+# update_flow recebe a lista de arestas de s a t no grafo
+# para cada aresta na lista, atualiza o fluxo de s a t
+# acha a aresta com menor capacidade e atualiza o fluxo das outros baseadas nesse vaor
+# por fim retorna o valor subtraido 
+def update_flow(arestas):
+    menor = arestas[0]
+    for ar in arestas:
+        if ar.capacity < menor.capacity:
+            menor = ar
+    temp = menor.capacity
+    for ar in arestas:
+        print(f' -> {ar.dst.id}  cap of {ar.capacity}')
+        ar.capacity -= temp
+    return temp
+def ford_fulkerson(vertices, s, t):
+    print("Ford-Fulkerson")
+    print(f'comeco: {s.id}   fim: {t.id}')
+
+    for v in vertices:
+        v.ff_pai = None
+        v.visited = False
+
+    # printa as arestas e a capacidade de cada uma
+    for v in vertices:
+        for ar in v.conexoes:
+            print(f'{v.id} -> {ar.dst.id} with {ar.capacity}')
+
+    max_flow = 0
+    
+    # ff_bfs para encontrar o caminho de s a t
+    # caso nao exista um caminho de s a t retorna None
+    # para percorer pelo caminnho comecamos de t e voltamos a s, 
+    # usnado o atributo ff_pai para saber o pai do vertice
+    vef = ff_bfs(vertices, s, t)
+    while vef != None:
+
+        # c guarda as arestas que estao no caminho de s a t
+        c = []
+        
+        # percore o caminho reverso, de t ate s, adicionando
+        # as arestas no caminho para 'c'        
+        p = t
+        while p.ff_pai != None:
+                c.append(p.ff_pai.getArestaFromVertice(p))
+                p = p.ff_pai
+        
+        max_flow += update_flow(c)
+
+        for v in vertices:
+            for ar in v.conexoes:
+                print(f'{v.id} -> {ar.dst.id} with {ar.capacity}')
+
+        vef = ff_bfs(vertices, s, t)
+    print(f'flow maximo = {max_flow}')
+    return max_flow
+
 
 def main():
     # vertices ficao guardados como ponteiros dentro de 'vertices'
     vertices = []
     lenv = 8
+   
     # arestas determina quais conexoes entre os nos sao feitas
-    arestas = [(1,2, 2), (1,4, 2), 
-               (2,3, -3), (2,4, -1), 
-               (3,7, -2), 
-               (4,8, 2), (4,1, -1),
-               (5,7, 1), (5,6, 2),
-               (6,5, 2), 
-               (8,7, 4)]
+    # arestas = [(1,2, 2), (1,4, 2), 
+    #            (2,3, -3), (2,4, -1), 
+    #            (3,7, -2), 
+    #            (4,8, 2), (4,1, -1),
+    #            (5,7, 1), (5,6, 2),
+    #            (6,5, 2), 
+    #            (8,7, 4)]
     # arestas = [(1,2, 1), (1,5, 1), (2,3, 2), (2,4, 2), (2,5, 2), (3,5, 3), (4,6, 4), (5,6, 3)]
+    
+    # para ford_fulkerson
+    arestas = [(1,2, 20), (1,4, 15), 
+               (2,3, 7), (2,4, 8), 
+               (3,7, 18), 
+               (4,8, 33), (4,1, 6),
+               (5,7, 9), (5,6, 17),
+               (6,5, 33), 
+               (8,7, 20)]
 
     for i in range(lenv):
         v = Vertice(i+1)
         vertices.append(v)
    
-    # trata de fazer as arestas entre os vertices, arestas orientadas
-    # for i in range(len(arestas)):
-    #     ipv, iuv = arestas[i]
-    #     pv, uv = vertices[ipv-1], vertices[iuv-1]
-    #     pv.conexoes.append(uv)
-    #     uv.conexoes.append(pv)
+    #para ford_fulkerson
+    for src, dst, c in arestas:
+        vertices[src-1].conexoes.append(Aresta(vertices[dst-1], 1, capacity=c))
 
     # orientado
-    for src, dst, w in arestas:
-        vertices[src-1].addAresta(vertices[dst-1], w)
-
+    # for src, dst, w in arestas:
+    #     vertices[src-1].addAresta(vertices[dst-1], w)
+    
     # nao orientado
     # for src, dst, w, in arestas:
     #     vertices[src-1].addAresta(vertices[dst-1], w)
@@ -286,6 +407,7 @@ def main():
     dijkstra(vertices, vertices[0])
     floyd_warshall(vertices)
     prim(vertices, vertices[0])
+    ford_fulkerson(vertices, vertices[0], vertices[6])
 
 if __name__ == "__main__":
     main()
