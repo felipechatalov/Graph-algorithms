@@ -1,3 +1,10 @@
+# Felipe Chatalov 118992
+# Lucas Beluomini 120111
+# Gabriel Rodrigues 118038
+
+from re import X
+
+
 class Vertice():
     def __init__(self, id):
         self.id = id
@@ -174,8 +181,8 @@ def dijkstra(vertices, pai):
     for v in vertices:
         print(f'{v.id} -> {v.dj_distancia if v.dj_distancia != float("inf") else f"SEM CAMINHO PARTINDO DE {pai.id}"}')
     print()
-# nao funciona com grafo nao orientado com valores negativos
-# mas funciona com grafo orientado com valores negativos
+
+# funciona com grafo orientado com valores negativos
 def floyd_warshall(vertices):
     print("Floyd-Warshall")
     d = [[float('inf') for i in range(len(vertices))] for j in range(len(vertices))]
@@ -272,7 +279,7 @@ def ff_bfs(g, pai, dst):
     q.append(pai)
     seq.append(pai)
 
-    print(f'Comecou em {pai.id}')
+    # print(f'Comecou em {pai.id}')
 
     while q != []:
         p = q.pop(0)
@@ -297,10 +304,10 @@ def ff_bfs(g, pai, dst):
         print(f"sem caminho de {pai.id} ate {dst.id}")
         return None
 
-    print(f'\nSequencia de visita em lista: ')
-    for v in seq:
-        print(v.id, end=" ") 
-    print('\n')
+    # print(f'\nSequencia de visita em lista: ')
+    # for v in seq:
+    #     print(v.id, end=" ") 
+    # print('\n')
     return seq
 # update_flow recebe a lista de arestas de s a t no grafo
 # para cada aresta na lista, atualiza o fluxo de s a t
@@ -313,7 +320,7 @@ def update_flow(arestas):
             menor = ar
     temp = menor.capacity
     for ar in arestas:
-        print(f' -> {ar.dst.id}  cap of {ar.capacity}')
+        # print(f' -> {ar.dst.id}  cap of {ar.capacity}')
         ar.capacity -= temp
     return temp
 def ford_fulkerson(vertices, s, t):
@@ -325,9 +332,9 @@ def ford_fulkerson(vertices, s, t):
         v.visited = False
 
     # printa as arestas e a capacidade de cada uma
-    for v in vertices:
-        for ar in v.conexoes:
-            print(f'{v.id} -> {ar.dst.id} with {ar.capacity}')
+    # for v in vertices:
+    #     for ar in v.conexoes:
+    #         print(f'{v.id} -> {ar.dst.id} with {ar.capacity}')
 
     max_flow = 0
     
@@ -348,11 +355,13 @@ def ford_fulkerson(vertices, s, t):
                 c.append(p.ff_pai.getArestaFromVertice(p))
                 p = p.ff_pai
         
-        max_flow += update_flow(c)
+        x = update_flow(c)
+        print(f"passando mais {x} de fluxo")
+        max_flow += x
 
-        for v in vertices:
-            for ar in v.conexoes:
-                print(f'{v.id} -> {ar.dst.id} with {ar.capacity}')
+        # for v in vertices:
+        #     for ar in v.conexoes:
+        #         print(f'{v.id} -> {ar.dst.id} with {ar.capacity}')
 
         vef = ff_bfs(vertices, s, t)
     print(f'flow maximo = {max_flow}')
@@ -362,49 +371,74 @@ def ford_fulkerson(vertices, s, t):
 def main():
     # vertices ficao guardados como ponteiros dentro de 'vertices'
     vertices = []
-    lenv = 8
    
+    # para implementacao de um novo grafo, basta colocar as arestas no formato:
+    # lista de tuplas com os seguintes valores: (origem, destino, peso), peso pode ser
+    # substituido por "capacidade", caso queira usar grafo para ford-fulkerson.
+    
+    # O nome da variavel precisa ser 'Arestas', assim como a variavel 'lenv' precisa
+    # conter o numero de vertices totais do grafo.
+    
+    # apos escolher o grafo desejado no formato de lista de tuplas, descendo o codigo
+    # temos que escolher se queremos usar no formato de grafo nao orientado ou orientado
+    # alem disso temos um modo especifico para o algoritmo de ford-fulkerson, onde trocamos
+    # peso por capacidade da aresta.
+
+    lenv = 8
+    
     # arestas determina quais conexoes entre os nos sao feitas
-    # arestas = [(1,2, 2), (1,4, 2), 
-    #            (2,3, -3), (2,4, -1), 
-    #            (3,7, -2), 
-    #            (4,8, 2), (4,1, -1),
-    #            (5,7, 1), (5,6, 2),
-    #            (6,5, 2), 
-    #            (8,7, 4)]
+    # grafo equivalente a imagem 'grafo.png'
+    arestas = [(1,2, 2), (1,4, 2), 
+               (2,3, -3), (2,4, -1), 
+               (3,7, -2), 
+               (4,8, 2), (4,1, -1),
+               (5,7, 1), (5,6, 2),
+               (6,5, 2), 
+               (8,7, 4)]
+
+    # grafo equivalente a imagem 'grafo2.png'
+    # grafo nao orientado
     # arestas = [(1,2, 1), (1,5, 1), (2,3, 2), (2,4, 2), (2,5, 2), (3,5, 3), (4,6, 4), (5,6, 3)]
     
     # para ford_fulkerson
-    arestas = [(1,2, 20), (1,4, 15), 
-               (2,3, 7), (2,4, 8), 
-               (3,7, 18), 
-               (4,8, 33), (4,1, 6),
-               (5,7, 9), (5,6, 17),
-               (6,5, 33), 
-               (8,7, 20)]
+    # grafo equivalente a imagem 'grafo.png' porem com capacidade diferente
+    # arestas = [(1,2, 20), (1,4, 15), 
+    #            (2,3, 7), (2,4, 8), 
+    #            (3,7, 18), 
+    #            (4,8, 33), (4,1, 6),
+    #            (5,7, 9), (5,6, 17),
+    #            (6,5, 33), 
+    #            (8,7, 20)]
+
+    
 
     for i in range(lenv):
         v = Vertice(i+1)
         vertices.append(v)
    
     #para ford_fulkerson
-    for src, dst, c in arestas:
-        vertices[src-1].conexoes.append(Aresta(vertices[dst-1], 1, capacity=c))
+    # for src, dst, c in arestas:
+        # vertices[src-1].conexoes.append(Aresta(vertices[dst-1], 1, capacity=c))
 
     # orientado
-    # for src, dst, w in arestas:
-    #     vertices[src-1].addAresta(vertices[dst-1], w)
+    for src, dst, w in arestas:
+        vertices[src-1].addAresta(vertices[dst-1], w)
     
     # nao orientado
     # for src, dst, w, in arestas:
     #     vertices[src-1].addAresta(vertices[dst-1], w)
     #     vertices[dst-1].addAresta(vertices[src-1], w)
 
-    print(vertices[0].id)
+
+
+
+    # trab 1
     bfs(vertices, vertices[0])
     dfs(vertices, vertices[0])
     bellman_ford(vertices, vertices[0])
     dijkstra(vertices, vertices[0])
+
+    # trab 2
     floyd_warshall(vertices)
     prim(vertices, vertices[0])
     ford_fulkerson(vertices, vertices[0], vertices[6])
